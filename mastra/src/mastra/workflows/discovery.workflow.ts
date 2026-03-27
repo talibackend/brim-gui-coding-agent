@@ -28,7 +28,7 @@ const fileContentReconStep = createStep({
             let analysis : any;
 
             try {
-                analysis = await fileContentAgent.generate(`Extract the necessary information from this file content:\n\n${content}`);
+                analysis = await fileContentAgent.generate(`Extract the necessary information from this file located at: ${key}\n\nFile content:\n\n${content}`);
                 analysis = JSON.parse(analysis.text);
             } catch (error : any) {
                 console.log(error);

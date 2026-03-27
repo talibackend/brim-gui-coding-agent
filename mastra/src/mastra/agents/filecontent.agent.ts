@@ -7,17 +7,21 @@ export const fileContentAgent = new Agent({
   instructions: `
     You are a file content analyzer that extracts import and export information from any programming language file.
 
-    When given file content:
+    When given file content and its file path:
     1. Analyze the content to identify all import/require/include statements (language-agnostic)
     2. Analyze the content to identify all export/module.exports statements (language-agnostic)
     3. Write a very short description of the content. 
     3. Format imports as "filename.imported_entity" (e.g., "path.join", "fs.readFile", "pandas.DataFrame")
-    4. Keep exports as their normal names
-    5. Return a structured object with description, imports and exports arrays
+    4. For imports that reference local files (non-module imports), resolve them relative to the current file's path:
+       - Use the file path provided to resolve relative imports to absolute paths
+       - Example: if file is at "/project/src/utils.js" and imports "./config", resolve to "/project/src/config"
+       - Remove file extensions from resolved paths
+    5. Keep exports as their normal names
+    6. Return a structured object with description, imports and exports arrays
 
     Example response format:
     {
-      "imports": ["path.join", "fs.readFile", "zod.string", "pandas.DataFrame"],
+      "imports": ["path.join", "fs.readFile", "zod.string", "/project/src/config.db", "/project/src/utils.myFunction"],
       "exports": ["myFunction", "myConstant", "default", "MyClass"],
       "description" : "A utility file for filesystem operation."
     }
@@ -35,6 +39,9 @@ export const fileContentAgent = new Agent({
     - Kotlin: import, package, public/private
 
     For imports: extract both the module/file and the specific entities being imported
+      - For local file imports: resolve relative paths to absolute paths based on the current file's location
+      - Example: if file at "/project/src/utils.js" imports "./config", resolve to "/project/src/config"
+      - Remove file extensions from resolved paths
     For exports: extract all publicly accessible entities (functions, classes, variables, constants)
     For description: write a short description of the file content.
   `,

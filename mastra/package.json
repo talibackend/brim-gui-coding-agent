@@ -19,10 +19,12 @@
   "dependencies": {
     "@mastra/core": "^1.15.0",
     "@mastra/evals": "^1.1.2",
+    "@mastra/fastembed": "^1.0.1",
     "@mastra/libsql": "^1.7.1",
     "@mastra/loggers": "^1.0.3",
-    "@mastra/memory": "^1.9.0",
+    "@mastra/memory": "^1.10.0",
     "@mastra/observability": "^1.5.1",
+    "@mastra/pg": "^1.8.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
