@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cytoscape Graph Visualization</title>
+    <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 20px 40px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        select,
+        button {
+            padding: 10px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:focus,
+        button:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 10px 24px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        #cy {
+            flex: 1;
+            min-height: 600px;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .sidebar {
+            width: 350px;
+            padding: 30px;
+            background: #f8f9fa;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #868e96;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .node-info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .node-info h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .node-details {
+            color: #868e96;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .node-details strong {
+            color: #495057;
+        }
+
+        .color-legend {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .color-legend h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .legend-label {
+            color: #495057;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 20px 40px;
+            text-align: center;
+            color: #868e96;
+            font-size: 14px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            #cy {
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+                min-height: 500px;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Codebase Graph Visualization</h1>
+            <div class="subtitle">Interactive dependency graph powered by Cytoscape.js</div>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="layout">Layout:</label>
+                <select id="layout">
+                    <option value="cose">Force-Directed (CoSE)</option>
+                    <option value="circle">Circle</option>
+                    <option value="grid">Grid</option>
+                    <option value="random">Random</option>
+                    <option value="breadthfirst">Breadth-First</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="nodeSize">Node Size:</label>
+                <select id="nodeSize">
+                    <option value="degree">By Connections</option>
+                    <option value="fixed">Fixed Size</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="edgeStyle">Edge Style:</label>
+                <select id="edgeStyle">
+                    <option value="bezier">Curved</option>
+                    <option value="straight">Straight</option>
+                </select>
+            </div>
+
+            <button id="resetView">Reset View</button>
+            <button id="exportBtn">Export PNG</button>
+        </div>
+
+        <div class="main-content">
+            <div id="cy"></div>
+
+            <div class="sidebar">
+                <div class="stats">
+                    <h2>Graph Statistics</h2>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Nodes:</span>
+                        <span class="stat-value" id="nodeCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Edges:</span>
+                        <span class="stat-value" id="edgeCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Selected Node:</span>
+                        <span class="stat-value" id="selectedNode">None</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Graph Density:</span>
+                        <span class="stat-value" id="graphDensity">0.00</span>
+                    </div>
+                </div>
+
+                <div class="node-info">
+                    <h3>Node Information</h3>
+                    <div class="node-details" id="nodeDetails">
+                        Click on a node to see details...
+                    </div>
+                </div>
+
+                <div class="color-legend">
+                    <h3>Color Legend (Common File Types)</h3>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #667eea;"></span>
+                            <span class="legend-label">TypeScript (.ts/.tsx)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #48bb78;"></span>
+                            <span class="legend-label">JavaScript (.js/.jsx)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #3776ab;"></span>
+                            <span class="legend-label">Python (.py)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #007396;"></span>
+                            <span class="legend-label">Java (.java)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #00599c;"></span>
+                            <span class="legend-label">C++ (.cpp)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #68217a;"></span>
+                            <span class="legend-label">C# (.cs)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #00add8;"></span>
+                            <span class="legend-label">Go (.go)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #e34c26;"></span>
+                            <span class="legend-label">HTML (.html)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #1572b6;"></span>
+                            <span class="legend-label">CSS (.css)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #f7df1e;"></span>
+                            <span class="legend-label">JSON (.json)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #cb171e;"></span>
+                            <span class="legend-label">YAML (.yaml/.yml)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #083fa1;"></span>
+                            <span class="legend-label">Markdown (.md)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #336791;"></span>
+                            <span class="legend-label">SQL (.sql)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: #718096;"></span>
+                            <span class="legend-label">Other/Unknown</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Powered by Cytoscape.js • Graph data generated from codebase analysis</p>
+        </footer>
+    </div>
+
+    <script>
+        // Sample graph data (replace with actual data from your agent)
+        const sampleGraphData = {
+            "nodes": [
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/docker-compose.yaml",
+                "label": "docker-compose.yaml",
+                "type": "file",
+                "description": "A Docker Compose file defining a single Postgres service (pgvector image) with environment variables, port mapping (5433:5432), and a named volume 'pgdata'.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/docker-compose.yaml",
+                "exports": [],
+                "imports": [],
+                "size": 250
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/examples/browser-use-agent-example.ts",
+                "label": "browser-use-agent-example.ts",
+                "type": "file",
+                "description": "TypeScript example script that demonstrates using browserUseAgentTool to perform browser-based tasks and log results.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/examples/browser-use-agent-example.ts",
+                "exports": [],
+                "imports": [
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/tools/browser-use-agent.tool.browserUseAgentTool"
+                ],
+                "size": 200
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/package.json",
+                "label": "package.json",
+                "type": "file",
+                "description": "package.json for the 'mastra' Node.js package: defines package metadata, scripts, engine requirement, and lists runtime and dev dependencies.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/package.json",
+                "exports": [],
+                "imports": [
+                    "@brave/brave-search-mcp-server",
+                    "@mastra/core",
+                    "@mastra/evals",
+                    "@mastra/fastembed",
+                    "@mastra/libsql",
+                    "@mastra/loggers",
+                    "@mastra/mcp",
+                    "@mastra/memory",
+                    "@mastra/observability",
+                    "browser-use",
+                    "zod",
+                    "@types/node",
+                    "mastra",
+                    "typescript"
+                ],
+                "size": 250
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/skills-lock.json",
+                "label": "skills-lock.json",
+                "type": "file",
+                "description": "A JSON lockfile recording skill metadata (version and mastra skill source, sourceType, and computedHash).",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/skills-lock.json",
+                "exports": [],
+                "imports": [],
+                "size": 250
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/store.config.ts",
+                "label": "store.config.ts",
+                "type": "file",
+                "description": "Creates and exports a PostgresStore instance configured from MASTRA_PG_CONNECTION_STRING or a local fallback connection string.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/store.config.ts",
+                "exports": [
+                    "Store"
+                ],
+                "imports": [
+                    "@mastra/pg.PostgresStore"
+                ],
+                "size": 150
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/vector.config.ts",
+                "label": "vector.config.ts",
+                "type": "file",
+                "description": "Defines and exports a configured PgVector instance (reads connection string from MASTRA_PG_VECTOR_CONNECTION_STRING, with a local Postgres fallback).",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/vector.config.ts",
+                "exports": [
+                    "VectorStore"
+                ],
+                "imports": [
+                    "@mastra/pg.PgVector"
+                ],
+                "size": 150
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/flight.agent.ts",
+                "label": "flight.agent.ts",
+                "type": "file",
+                "description": "Defines and exports a Flight Agent using Mastra's Agent and Memory, configured with tools from the browser-use MCP client.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/flight.agent.ts",
+                "exports": [
+                    "flightAgent"
+                ],
+                "imports": [
+                    "@mastra/core/agent.Agent",
+                    "@mastra/memory.Memory",
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.browserUseClient"
+                ],
+                "size": 100
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/hotel.agent.ts",
+                "label": "hotel.agent.ts",
+                "type": "file",
+                "description": "Defines and exports a Hotel Agent instance configured with Memory, model settings, instructions, and tools loaded from the browser-use MCP client.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/hotel.agent.ts",
+                "exports": [
+                    "hotelAgent"
+                ],
+                "imports": [
+                    "@mastra/core/agent.Agent",
+                    "@mastra/memory.Memory",
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.browserUseClient"
+                ],
+                "size": 100
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/shopping.agent.ts",
+                "label": "shopping.agent.ts",
+                "type": "file",
+                "description": "Defines a Shopping Agent using Mastra Agent with Memory, model configuration, and browser-use MCP tools.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/shopping.agent.ts",
+                "exports": [
+                    "shoppingAgent"
+                ],
+                "imports": [
+                    "@mastra/core/agent.Agent",
+                    "@mastra/memory.Memory",
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.browserUseClient"
+                ],
+                "size": 100
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/supervisor.agent.ts",
+                "label": "supervisor.agent.ts",
+                "type": "file",
+                "description": "Defines a Supervisor autonomous Agent configured with memory, a model, and browser automation tools (browserUseClient).",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/supervisor.agent.ts",
+                "exports": [
+                    "superAgent"
+                ],
+                "imports": [
+                    "@mastra/core/agent.Agent",
+                    "@mastra/memory.Memory",
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.browserUseClient",
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/config/store.config.Store",
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/config/vector.config.VectorStore",
+                    "@mastra/fastembed.fastembed"
+                ],
+                "size": 100
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/index.ts",
+                "label": "index.ts",
+                "type": "file",
+                "description": "Creates and exports a configured Mastra instance with storage, vector store, logger, and a supervisor agent.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/index.ts",
+                "exports": [
+                    "mastra"
+                ],
+                "imports": [
+                    "@mastra/core/mastra.Mastra",
+                    "@mastra/loggers.PinoLogger",
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/store.config.Store",
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/vector.config.VectorStore",
+                    "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/supervisor.agent.superAgent"
+                ],
+                "size": 150
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.ts",
+                "label": "browser-use.client.ts",
+                "type": "file",
+                "description": "Defines and exports a configured MCPClient instance ('browser-use-client') that runs a 'browser-use' server via the 'uvx' command and reads OPENAI_API_KEY from env.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.ts",
+                "exports": [
+                    "browserUseClient"
+                ],
+                "imports": [
+                    "@mastra/mcp.MCPClient",
+                    "node:path.path",
+                    "node:path.dirname",
+                    "node:url.fileURLToPath"
+                ],
+                "size": 100
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/scorers/weather-scorer.ts",
+                "label": "weather-scorer.ts",
+                "type": "file",
+                "description": "Defines weather-related scorers: a tool-call appropriateness scorer, a completeness scorer, and a custom LLM-judged translation-quality scorer.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/scorers/weather-scorer.ts",
+                "exports": [
+                    "toolCallAppropriatenessScorer",
+                    "completenessScorer",
+                    "translationScorer",
+                    "scorers"
+                ],
+                "imports": [
+                    "zod.z",
+                    "@mastra/evals/scorers/prebuilt.createToolCallAccuracyScorerCode",
+                    "@mastra/evals/scorers/prebuilt.createCompletenessScorer",
+                    "@mastra/evals/scorers/utils.getAssistantMessageFromRunOutput",
+                    "@mastra/evals/scorers/utils.getUserMessageFromRunInput",
+                    "@mastra/core/evals.createScorer"
+                ],
+                "size": 100
+            },
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/tsconfig.json",
+                "label": "tsconfig.json",
+                "type": "file",
+                "description": "TypeScript compiler configuration (tsconfig.json) specifying ES2022 target and module, bundler moduleResolution, strict checks, noEmit, outDir 'dist', and including 'src/**/*'.",
+                "filePath": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/tsconfig.json",
+                "exports": [],
+                "imports": [],
+                "size": 250
+            }
+        ],
+        "edges": [
+            {
+                "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/package.json_imports_browser-use",
+                "source": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/package.json",
+                "target": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/examples/browser-use-agent-example.ts",
+                "type": "imports",
+                "label": "imports",
+                "importedProperty": null
+            },
+            // {
+            //     "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/package.json_imports_mastra",
+            //     "source": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/package.json",
+            //     "target": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/docker-compose.yaml",
+            //     "type": "imports",
+            //     "label": "imports",
+            //     "importedProperty": null
+            // },
+            // {
+            //     "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/flight.agent.ts_imports_/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.browserUseClient",
+            //     "source": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/flight.agent.ts",
+            //     "target": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.ts",
+            //     "type": "imports",
+            //     "label": "imports",
+            //     "importedProperty": "browserUseClient"
+            // },
+            // {
+            //     "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/hotel.agent.ts_imports_/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.browserUseClient",
+            //     "source": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/hotel.agent.ts",
+            //     "target": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.ts",
+            //     "type": "imports",
+            //     "label": "imports",
+            //     "importedProperty": "browserUseClient"
+            // },
+            // {
+            //     "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/shopping.agent.ts_imports_/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.browserUseClient",
+            //     "source": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/shopping.agent.ts",
+            //     "target": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.ts",
+            //     "type": "imports",
+            //     "label": "imports",
+            //     "importedProperty": "browserUseClient"
+            // },
+            // {
+            //     "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/supervisor.agent.ts_imports_/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.browserUseClient",
+            //     "source": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/supervisor.agent.ts",
+            //     "target": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/mcp-clients/browser-use.client.ts",
+            //     "type": "imports",
+            //     "label": "imports",
+            //     "importedProperty": "browserUseClient"
+            // },
+            // {
+            //     "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/index.ts_imports_/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/store.config.Store",
+            //     "source": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/index.ts",
+            //     "target": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/store.config.ts",
+            //     "type": "imports",
+            //     "label": "imports",
+            //     "importedProperty": "Store"
+            // },
+            // {
+            //     "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/index.ts_imports_/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/vector.config.VectorStore",
+            //     "source": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/index.ts",
+            //     "target": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/config/vector.config.ts",
+            //     "type": "imports",
+            //     "label": "imports",
+            //     "importedProperty": "VectorStore"
+            // },
+            // {
+            //     "id": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/index.ts_imports_/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/supervisor.agent.superAgent",
+            //     "source": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/index.ts",
+            //     "target": "/Users/talibackend/Desktop/Projects/brim-PA-backend/mastra/src/mastra/agents/supervisor.agent.ts",
+            //     "type": "imports",
+            //     "label": "imports",
+            //     "importedProperty": "superAgent"
+            // }
+        ]
+        };
+
+        // Initialize Cytoscape
+        const cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: sampleGraphData,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': function (ele) {
+                            const filePath = ele.data('filePath') || '';
+
+                            // Color based only on file extension
+                            const extension = filePath.toLowerCase();
+
+                            // JavaScript/TypeScript family
+                            if (extension.endsWith('.ts') || extension.endsWith('.tsx')) return '#667eea';
+                            if (extension.endsWith('.js') || extension.endsWith('.jsx')) return '#48bb78';
+                            if (extension.endsWith('.mjs') || extension.endsWith('.cjs')) return '#38a169';
+
+                            // Python
+                            if (extension.endsWith('.py') || extension.endsWith('.pyw')) return '#3776ab';
+
+                            // Java
+                            if (extension.endsWith('.java')) return '#007396';
+
+                            // C/C++
+                            if (extension.endsWith('.c')) return '#555555';
+                            if (extension.endsWith('.cpp') || extension.endsWith('.cc') || extension.endsWith('.cxx')) return '#00599c';
+                            if (extension.endsWith('.h') || extension.endsWith('.hpp')) return '#6495ed';
+
+                            // C#
+                            if (extension.endsWith('.cs')) return '#68217a';
+
+                            // Go
+                            if (extension.endsWith('.go')) return '#00add8';
+
+                            // Rust
+                            if (extension.endsWith('.rs')) return '#dea584';
+
+                            // Ruby
+                            if (extension.endsWith('.rb')) return '#cc342d';
+
+                            // PHP
+                            if (extension.endsWith('.php')) return '#777bb4';
+
+                            // Swift
+                            if (extension.endsWith('.swift')) return '#fa7343';
+
+                            // Kotlin
+                            if (extension.endsWith('.kt') || extension.endsWith('.kts')) return '#7f52ff';
+
+                            // Dart
+                            if (extension.endsWith('.dart')) return '#0175c2';
+
+                            // Scala
+                            if (extension.endsWith('.scala')) return '#dc322f';
+
+                            // Haskell
+                            if (extension.endsWith('.hs')) return '#5e5086';
+
+                            // Elixir
+                            if (extension.endsWith('.ex') || extension.endsWith('.exs')) return '#6e4a7e';
+
+                            // Clojure
+                            if (extension.endsWith('.clj') || extension.endsWith('.cljs')) return '#5881d8';
+
+                            // Lua
+                            if (extension.endsWith('.lua')) return '#000080';
+
+                            // Shell/Bash
+                            if (extension.endsWith('.sh') || extension.endsWith('.bash')) return '#4eaa25';
+
+                            // PowerShell
+                            if (extension.endsWith('.ps1')) return '#012456';
+
+                            // R
+                            if (extension.endsWith('.r')) return '#276dc3';
+
+                            // MATLAB
+                            if (extension.endsWith('.m')) return '#0076a8';
+
+                            // Perl
+                            if (extension.endsWith('.pl') || extension.endsWith('.pm')) return '#0098d6';
+
+                            // Groovy
+                            if (extension.endsWith('.groovy')) return '#4298b8';
+
+                            // Web technologies
+                            if (extension.endsWith('.html') || extension.endsWith('.htm')) return '#e34c26';
+                            if (extension.endsWith('.css')) return '#1572b6';
+                            if (extension.endsWith('.scss') || extension.endsWith('.sass')) return '#c6538c';
+                            if (extension.endsWith('.less')) return '#1d365d';
+
+                            // Configuration/data files
+                            if (extension.endsWith('.json')) return '#f7df1e';
+                            if (extension.endsWith('.yaml') || extension.endsWith('.yml')) return '#cb171e';
+                            if (extension.endsWith('.toml')) return '#9c4221';
+                            if (extension.endsWith('.xml')) return '#0060ac';
+                            if (extension.endsWith('.ini') || extension.endsWith('.cfg') || extension.endsWith('.conf')) return '#6c757d';
+
+                            // Documentation
+                            if (extension.endsWith('.md') || extension.endsWith('.markdown')) return '#083fa1';
+                            if (extension.endsWith('.txt')) return '#6c757d';
+
+                            // SQL
+                            if (extension.endsWith('.sql')) return '#336791';
+
+                            // GraphQL
+                            if (extension.endsWith('.graphql') || extension.endsWith('.gql')) return '#e10098';
+
+                            // Docker
+                            if (extension.endsWith('.dockerfile') || filePath.endsWith('Dockerfile')) return '#2496ed';
+
+                            // Makefile
+                            if (extension.endsWith('makefile') || extension.endsWith('.mk') || extension.endsWith('.make')) return '#6e4a7e';
+
+                            // Project files
+                            if (extension.endsWith('.csproj') || extension.endsWith('.vbproj')) return '#512bd4';
+                            if (extension.endsWith('.sln')) return '#68217a';
+                            if (extension.endsWith('.csproj') || extension.endsWith('.vbproj')) return '#512bd4';
+                            if (extension.endsWith('.sln')) return '#68217a';
+
+                            // Other common extensions
+                            if (extension.endsWith('.vue')) return '#42b883';
+                            if (extension.endsWith('.svelte')) return '#ff3e00';
+                            if (extension.endsWith('.elm')) return '#60b5cc';
+                            if (extension.endsWith('.purs')) return '#1d222d';
+                            if (extension.endsWith('.coffee')) return '#244776';
+                            if (extension.endsWith('.litcoffee')) return '#244776';
+                            if (extension.endsWith('.jl')) return '#a270ba';
+                            if (extension.endsWith('.f') || extension.endsWith('.for') || extension.endsWith('.f90')) return '#734f96';
+                            if (extension.endsWith('.ada') || extension.endsWith('.adb') || extension.endsWith('.ads')) return '#02f88c';
+                            if (extension.endsWith('.asm')) return '#6e4c13';
+                            if (extension.endsWith('.pas') || extension.endsWith('.pp')) return '#b0ce4e';
+                            if (extension.endsWith('.v') || extension.endsWith('.vh') || extension.endsWith('.sv')) return '#659ad2';
+                            if (extension.endsWith('.tex')) return '#3d6117';
+                            if (extension.endsWith('.rst')) return '#358a5b';
+                            if (extension.endsWith('.adoc') || extension.endsWith('.asciidoc')) return '#5a5a5a';
+                            if (extension.endsWith('.csv')) return '#237346';
+                            if (extension.endsWith('.tsv')) return '#237346';
+                            if (extension.endsWith('.lock')) return '#718096';
+                            if (extension.endsWith('.log')) return '#718096';
+                            if (extension.endsWith('.tmp')) return '#718096';
+                            if (extension.endsWith('.bak')) return '#718096';
+
+                            // Default color for unknown extensions
+                            return '#718096';
+                        },
+                        'label': 'data(label)',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'color': 'white',
+                        'font-size': '12px',
+                        'font-weight': '600',
+                        'text-max-width': function (ele) { return ele.data('size') || 30; },
+                        'text-wrap': 'wrap',
+                        'text-overflow-wrap': 'anywhere',
+                        'width': function (ele) { return ele.data('size') || 30; },
+                        'height': function (ele) { return ele.data('size') || 30; },
+                        'border-width': 2,
+                        'border-color': 'white'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#cbd5e0',
+                        'target-arrow-color': '#cbd5e0',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'label': 'data(label)',
+                        'font-size': '12px',
+                        'color': '#718096',
+                        'text-background-color': 'white',
+                        'text-background-opacity': 0.8,
+                        'text-background-padding': '3px'
+                    }
+                },
+                {
+                    selector: 'node:selected',
+                    style: {
+                        'border-width': 4,
+                        'border-color': '#f56565',
+                        'background-color': function (ele) {
+                            const filePath = ele.data('filePath') || '';
+
+                            // Return darker version of the same color for selected state
+                            const extension = filePath.toLowerCase();
+
+                            // JavaScript/TypeScript family
+                            if (extension.endsWith('.ts') || extension.endsWith('.tsx')) return '#553c9a';
+                            if (extension.endsWith('.js') || extension.endsWith('.jsx')) return '#2f855a';
+                            if (extension.endsWith('.mjs') || extension.endsWith('.cjs')) return '#276749';
+
+                            // Python
+                            if (extension.endsWith('.py') || extension.endsWith('.pyw')) return '#2c5f8a';
+
+                            // Java
+                            if (extension.endsWith('.java')) return '#005a7a';
+
+                            // C/C++
+                            if (extension.endsWith('.c')) return '#333333';
+                            if (extension.endsWith('.cpp') || extension.endsWith('.cc') || extension.endsWith('.cxx')) return '#004a7a';
+                            if (extension.endsWith('.h') || extension.endsWith('.hpp')) return '#4a7aed';
+
+                            // C#
+                            if (extension.endsWith('.cs')) return '#4a1862';
+
+                            // Go
+                            if (extension.endsWith('.go')) return '#0087b0';
+
+                            // Rust
+                            if (extension.endsWith('.rs')) return '#b87c5a';
+
+                            // Ruby
+                            if (extension.endsWith('.rb')) return '#9c2821';
+
+                            // PHP
+                            if (extension.endsWith('.php')) return '#5d5f8a';
+
+                            // Swift
+                            if (extension.endsWith('.swift')) return '#c85a33';
+
+                            // Kotlin
+                            if (extension.endsWith('.kt') || extension.endsWith('.kts')) return '#5f3ac7';
+
+                            // Dart
+                            if (extension.endsWith('.dart')) return '#015d9a';
+
+                            // Scala
+                            if (extension.endsWith('.scala')) return '#a8251f';
+
+                            // Haskell
+                            if (extension.endsWith('.hs')) return '#453866';
+
+                            // Elixir
+                            if (extension.endsWith('.ex') || extension.endsWith('.exs')) return '#52385e';
+
+                            // Clojure
+                            if (extension.endsWith('.clj') || extension.endsWith('.cljs')) return '#3d61a0';
+
+                            // Lua
+                            if (extension.endsWith('.lua')) return '#000060';
+
+                            // Shell/Bash
+                            if (extension.endsWith('.sh') || extension.endsWith('.bash')) return '#3a7a1d';
+
+                            // PowerShell
+                            if (extension.endsWith('.ps1')) return '#011c40';
+
+                            // R
+                            if (extension.endsWith('.r')) return '#1c5593';
+
+                            // MATLAB
+                            if (extension.endsWith('.m')) return '#005a88';
+
+                            // Perl
+                            if (extension.endsWith('.pl') || extension.endsWith('.pm')) return '#0078a6';
+
+                            // Groovy
+                            if (extension.endsWith('.groovy')) return '#2d7898';
+
+                            // Web technologies
+                            if (extension.endsWith('.html') || extension.endsWith('.htm')) return '#b33c1e';
+                            if (extension.endsWith('.css')) return '#0f5a96';
+                            if (extension.endsWith('.scss') || extension.endsWith('.sass')) return '#9c3a6c';
+                            if (extension.endsWith('.less')) return '#142a4d';
+
+                            // Configuration/data files
+                            if (extension.endsWith('.json')) return '#c0af1a';
+                            if (extension.endsWith('.yaml') || extension.endsWith('.yml')) return '#9b1218';
+                            if (extension.endsWith('.toml')) return '#7c3419';
+                            if (extension.endsWith('.xml')) return '#004a8c';
+                            if (extension.endsWith('.ini') || extension.endsWith('.cfg') || extension.endsWith('.conf')) return '#495057';
+
+                            // Documentation
+                            if (extension.endsWith('.md') || extension.endsWith('.markdown')) return '#062f81';
+                            if (extension.endsWith('.txt')) return '#495057';
+
+                            // SQL
+                            if (extension.endsWith('.sql')) return '#1a4d71';
+
+                            // GraphQL
+                            if (extension.endsWith('.graphql') || extension.endsWith('.gql')) return '#b10078';
+
+                            // Docker
+                            if (extension.endsWith('.dockerfile') || filePath.endsWith('Dockerfile')) return '#1a7acd';
+
+                            // Makefile
+                            if (extension.endsWith('makefile') || extension.endsWith('.mk') || extension.endsWith('.make')) return '#52385e';
+
+                            // Project files
+                            if (extension.endsWith('.csproj') || extension.endsWith('.vbproj')) return '#3a1fa4';
+                            if (extension.endsWith('.sln')) return '#4a1862';
+
+                            // Other common extensions
+                            if (extension.endsWith('.vue')) return '#329c6b';
+                            if (extension.endsWith('.svelte')) return '#cc3200';
+                            if (extension.endsWith('.elm')) return '#4a95ac';
+                            if (extension.endsWith('.purs')) return '#0f1219';
+                            if (extension.endsWith('.coffee')) return '#1c3756';
+                            if (extension.endsWith('.litcoffee')) return '#1c3756';
+                            if (extension.endsWith('.jl')) return '#8250a0';
+                            if (extension.endsWith('.f') || extension.endsWith('.for') || extension.endsWith('.f90')) return '#5a3f76';
+                            if (extension.endsWith('.ada') || extension.endsWith('.adb') || extension.endsWith('.ads')) return '#02c874';
+                            if (extension.endsWith('.asm')) return '#553c0f';
+                            if (extension.endsWith('.pas') || extension.endsWith('.pp')) return '#90ae3e';
+                            if (extension.endsWith('.v') || extension.endsWith('.vh') || extension.endsWith('.sv')) return '#4d7ab2';
+                            if (extension.endsWith('.tex')) return '#2d4a11';
+                            if (extension.endsWith('.rst')) return '#2a7a4b';
+                            if (extension.endsWith('.adoc') || extension.endsWith('.asciidoc')) return '#3a3a3a';
+                            if (extension.endsWith('.csv')) return '#1b5a36';
+                            if (extension.endsWith('.tsv')) return '#1b5a36';
+                            if (extension.endsWith('.lock')) return '#495057';
+                            if (extension.endsWith('.log')) return '#495057';
+                            if (extension.endsWith('.tmp')) return '#495057';
+                            if (extension.endsWith('.bak')) return '#495057';
+
+                            // Default darker color for unknown extensions
+                            return '#4a5568';
+                        }
+                    }
+                }
+            ],
+            layout: {
+                name: 'cose',
+                padding: 50,
+                animate: true,
+                animationDuration: 1000,
+                fit: true
+            }
+        });
+
+        // Update statistics
+        function updateStatistics() {
+            document.getElementById('nodeCount').textContent = cy.nodes().length;
+            document.getElementById('edgeCount').textContent = cy.edges().length;
+
+            const totalNodes = cy.nodes().length;
+            const totalEdges = cy.edges().length;
+            const maxEdges = totalNodes * (totalNodes - 1);
+            const density = maxEdges > 0 ? (totalEdges / maxEdges).toFixed(3) : '0.000';
+            document.getElementById('graphDensity').textContent = density;
+        }
+
+        // Node click handler
+        cy.on('tap', 'node', function (evt) {
+            const node = evt.target;
+            document.getElementById('selectedNode').textContent = node.data('label');
+
+            const details = `
+                <p><strong>ID:</strong> ${node.data('id')}</p>
+                <p><strong>Type:</strong> ${node.data('type')}</p>
+                <p><strong>Connections:</strong> ${node.connectedEdges().length}</p>
+                <p><strong>Incoming:</strong> ${node.incomers().nodes().length}</p>
+                <p><strong>Outgoing:</strong> ${node.outgoers().nodes().length}</p>
+            `;
+            document.getElementById('nodeDetails').innerHTML = details;
+        });
+
+        // Clear selection when clicking on background
+        cy.on('tap', function (evt) {
+            if (evt.target === cy) {
+                document.getElementById('selectedNode').textContent = 'None';
+                document.getElementById('nodeDetails').innerHTML = 'Click on a node to see details...';
+            }
+        });
+
+        // Control handlers
+        document.getElementById('layout').addEventListener('change', function (e) {
+            cy.layout({
+                name: e.target.value,
+                animate: true,
+                animationDuration: 1000
+            }).run();
+        });
+
+        document.getElementById('nodeSize').addEventListener('change', function (e) {
+            if (e.target.value === 'degree') {
+                cy.nodes().style('width', function (node) {
+                    return 20 + node.connectedEdges().length * 5;
+                }).style('height', function (node) {
+                    return 20 + node.connectedEdges().length * 5;
+                });
+            } else {
+                cy.nodes().style('width', function (node) {
+                    return node.data('size') || 30;
+                }).style('height', function (node) {
+                    return node.data('size') || 30;
+                });
+            }
+        });
+
+        document.getElementById('edgeStyle').addEventListener('change', function (e) {
+            cy.edges().style('curve-style', e.target.value);
+        });
+
+        document.getElementById('resetView').addEventListener('click', function () {
+            cy.fit().center();
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', function () {
+            const png = cy.png({ full: true, scale: 2 });
+            const link = document.createElement('a');
+            link.download = 'codebase-graph.png';
+            link.href = png;
+            link.click();
+        });
+
+        // Initial statistics update
+        updateStatistics();
+    </script>
+</body>
+
+</html>

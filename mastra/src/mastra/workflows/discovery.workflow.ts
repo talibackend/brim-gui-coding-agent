@@ -17,29 +17,54 @@ const fileContentReconStep = createStep({
         description : z.string()
     })),
     execute : async ({inputData}) =>{
+        console.log(inputData);
         let completedRecord : any = {};
 
-        let keys = Object.keys(inputData);
-
-        for(let i = 0; i < keys.length; i++){
-            let key = keys[i]
-            let content = inputData[key];
-
+        const keys = Object.keys(inputData);
+        
+        // Process all files concurrently using Promise.all
+        const processingPromises = keys.map(async (key) => {
+            const content = inputData[key];
             let analysis : any;
 
             try {
-                analysis = await fileContentAgent.generate(`Extract the necessary information from this file located at: ${key}\n\nFile content:\n\n${content}`);
-                analysis = JSON.parse(analysis.text);
-            } catch (error : any) {
-                console.log(error);
-                continue;
-            }
+                const response = await fileContentAgent.generate(`Extract the necessary information from this file located at: ${key}\n\nFile content:\n\n${content}`);
+                analysis = JSON.parse(response.text);
+                
+                // Sanitize JSON for PostgreSQL storage - fix invalid escape sequences
+                if (analysis.imports && Array.isArray(analysis.imports)) {
+                    analysis.imports = analysis.imports.map((imp: string) => 
+                        imp.replace(/\\\\/g, '\\\\\\\\').replace(/\\-(?![bfnrtu0-9])/g, '\\\\-')
+                    );
+                }
+                if (analysis.exports && Array.isArray(analysis.exports)) {
+                    analysis.exports = analysis.exports.map((exp: string) => 
+                        exp.replace(/\\\\/g, '\\\\\\\\').replace(/\\-(?![bfnrtu0-9])/g, '\\\\-')
+                    );
+                }
+                if (analysis.description && typeof analysis.description === 'string') {
+                    analysis.description = analysis.description.replace(/\\\\/g, '\\\\\\\\').replace(/\\-(?![bfnrtu0-9])/g, '\\\\-');
+                }
 
-            completedRecord[key] = {
-                content,
-                ...analysis
+                return { key, content, analysis, success: true };
+            } catch (error : any) {
+                console.log(`Error processing file ${key}:`, error);
+                return { key, content, analysis: null, success: false, error };
             }
-        }
+        });
+
+        // Wait for all files to be processed
+        const results = await Promise.all(processingPromises);
+
+        // Build the completed record from successful results
+        results.forEach(result => {
+            if (result.success && result.analysis) {
+                completedRecord[result.key] = {
+                    content: result.content,
+                    ...result.analysis
+                };
+            }
+        });
 
         return completedRecord;
     }

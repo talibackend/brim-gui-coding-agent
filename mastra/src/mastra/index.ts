@@ -6,10 +6,12 @@ import { fileContentAgent } from './agents/filecontent.agent';
 import { discoveryWorkflow } from './workflows/discovery.workflow';
 import { Store } from '../config/store.config';
 import { VectorStore } from '../config/vector.config';
+import { exclusionPatternWorkflow } from './workflows/exclusionPattern.workflow';
+import { exclusionPatternsAgent } from './agents/exclusionPatterns.agent';
 
 export const mastra = new Mastra({
-  agents: { fileContentAgent, mainAgent },
-  workflows: { discoveryWorkflow },
+  agents: { fileContentAgent, mainAgent, exclusionPatternsAgent },
+  workflows: { discoveryWorkflow, exclusionPatternWorkflow },
   storage : Store,
   vectors: {VectorStore},
   logger: new PinoLogger({

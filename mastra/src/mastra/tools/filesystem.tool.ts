@@ -19,11 +19,28 @@ export const listFiles = createTool({
     
     function shouldExclude(itemPath: string): boolean {
       return exclude.some(pattern => {
-        if (pattern.includes('*')) {
-          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-          return regex.test(itemPath);
+        // Convert glob pattern to regex
+        let regexPattern = pattern
+          // Escape regex special characters except * and ?
+          .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+          // Convert ** to match any characters including /
+          .replace(/\*\*/g, '.*')
+          // Convert * to match any characters except /
+          .replace(/\*/g, '[^/]*')
+          // Convert ? to match single character except /
+          .replace(/\?/g, '[^/]');
+        
+        // Handle directory patterns (ending with /)
+        if (pattern.endsWith('/')) {
+          // Match directory at any level
+          regexPattern = `(^|/)${regexPattern.slice(0, -1)}(/|$)`;
+        } else {
+          // Match file or directory name
+          regexPattern = `(^|/)${regexPattern}$`;
         }
-        return itemPath.includes(pattern);
+        
+        const regex = new RegExp(regexPattern);
+        return regex.test(itemPath);
       });
     }
     
@@ -33,8 +50,6 @@ export const listFiles = createTool({
       const items = fs.readdirSync(currentPath, { withFileTypes: true });
       for (const item of items) {
         const itemRelativePath = `${item.parentPath}/${item.name}`;
-
-        console.log(itemRelativePath);
 
         if (shouldExclude(itemRelativePath)) {
           continue;
@@ -77,5 +92,52 @@ export const readFiles = createTool({
     });
     
     return contents;
+  },
+});
+
+export const fileExtensions = createTool({
+  id: 'file-extensions',
+  description: 'Extract unique file extensions from an array of file paths',
+  inputSchema: z.array(z.string()).describe('Array of file paths to analyze'),
+  outputSchema: z.array(z.string()).describe('Unique collection of file extensions'),
+  execute: async (inputData) => {
+    const extensions = new Set<string>();
+    
+    inputData.forEach((path) => {
+      // Extract extension from file path
+      const lastDotIndex = path.lastIndexOf('.');
+      if (lastDotIndex !== -1 && lastDotIndex < path.length - 1) {
+        const extension = path.substring(lastDotIndex + 1).toLowerCase();
+        extensions.add(extension);
+      }
+    });
+    
+    return Array.from(extensions).sort();
+  },
+});
+
+export const subdirectories = createTool({
+  id: 'subdirectories',
+  description: 'Extract unique subdirectory names from an array of file paths',
+  inputSchema: z.array(z.string()).describe('Array of file paths to analyze'),
+  outputSchema: z.array(z.string()).describe('Unique collection of subdirectory names'),
+  execute: async (inputData) => {
+    const dirNames = new Set<string>();
+    
+    inputData.forEach((path) => {
+      // Extract directory path from file path
+      const dirPath = path.substring(0, path.lastIndexOf('/'));
+      
+      // Split directory path into individual folder names
+      const folders = dirPath.split('/').filter(folder => folder.trim() !== '');
+      
+      // Add each folder name to the set, excluding the root directory
+      // (skip the first element which is the root directory name)
+      if (folders.length > 1) {
+        folders.slice(1).forEach(folder => dirNames.add(folder));
+      }
+    });
+    
+    return Array.from(dirNames).sort();
   },
 });

@@ -23,7 +23,8 @@ const cytoscapeNodeSchema = z.object({
     description: z.string().optional(),
     filePath: z.string().optional(),
     exports: z.array(z.string()).optional(),
-    imports: z.array(z.string()).optional()
+    imports: z.array(z.string()).optional(),
+    size: z.number().optional()
   })
 });
 
@@ -58,9 +59,35 @@ export const generateMapTool = createTool({
 
     const discoveryData = inputData.discoveryData;
 
+    // Calculate file depths and find min/max depth
+    const fileDepths = new Map<string, number>();
+    let minDepth = Infinity;
+    let maxDepth = 0;
+
+    Object.keys(discoveryData).forEach((filePath) => {
+      // Count path segments to determine depth
+      const depth = filePath.split('/').length;
+      fileDepths.set(filePath, depth);
+      minDepth = Math.min(minDepth, depth);
+      maxDepth = Math.max(maxDepth, depth);
+    });
+
+    // Function to calculate size based on depth (250 for shallowest, 100 for deepest)
+    const calculateSize = (depth: number): number => {
+      if (maxDepth === minDepth) return 175; // All files at same depth
+      
+      // Linear interpolation: size = 250 - ((depth - minDepth) / (maxDepth - minDepth)) * 150
+      // Minimum size 100, maximum size 250, increment steps of ~20
+      const normalizedDepth = (depth - minDepth) / (maxDepth - minDepth);
+      return Math.round(250 - (normalizedDepth * 150));
+    };
+
     // First, create nodes for all files
     Object.entries(discoveryData).forEach(([filePath, fileData]) => {
       if (!nodeIds.has(filePath)) {
+        const depth = fileDepths.get(filePath) || minDepth;
+        const size = calculateSize(depth);
+        
         nodes.push({
           data: {
             id: filePath,
@@ -69,7 +96,8 @@ export const generateMapTool = createTool({
             description: fileData.description,
             filePath: filePath,
             exports: fileData.exports,
-            imports: fileData.imports
+            imports: fileData.imports,
+            size: size
           }
         });
         nodeIds.add(filePath);
@@ -112,7 +140,7 @@ export const generateMapTool = createTool({
                 source: sourceFilePath,
                 target: targetFilePath,
                 type: 'imports',
-                label: importString,
+                label: 'imports',
                 importedProperty: importedProperty || null
               }
             });
