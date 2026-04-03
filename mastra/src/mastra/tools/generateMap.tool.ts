@@ -32,7 +32,9 @@ const cytoscapeEdgeSchema = z.object({
     target: z.string().describe('ID of the target node'),
     type: z.enum(['imports', 'exports', 'contains']).optional().describe('Type of relationship between nodes'),
     label: z.string().optional().describe('Display label for the edge'),
-    importedProperty: z.string().optional().nullable().describe('Specific property being imported (if applicable)')
+    importedProperty: z.string().optional().nullable().describe('Specific property being imported (if applicable)'),
+    importCount: z.number().optional().describe('Number of imports consolidated in this edge'),
+    allImports: z.array(z.string()).optional().describe('Array of all imported properties for this edge')
   })
 });
 
@@ -125,27 +127,54 @@ export const generateMapTool = createTool({
 
       nodes.push({ data });
 
+      // Group imports by source file to consolidate multiple imports into single edges
+      const importGroups: Record<string, string[]> = {};
+      
       for(let j = 0; j < currentFile.imports.length; j++) {
         const importTarget = currentFile.imports[j];
-
         const importSplitted = importTarget.split('.');
-
-        const edgeLabel = importSplitted[importSplitted.length - 1];
+        const importedProperty = importSplitted[importSplitted.length - 1];
         importSplitted.pop();
         const importFilePath = importSplitted.join('.');
 
         const foundFilePath = checkIfFileExists(filePaths, importFilePath);
         if(foundFilePath && importFilePath){
-          const _data = {
-            id : `${filePath}-imports-${importFilePath}`,
-            label : edgeLabel,
-            source : filePath,
-            target : foundFilePath,
-            type : 'imports',
-            importedProperty: edgeLabel
+          if (!importGroups[foundFilePath]) {
+            importGroups[foundFilePath] = [];
           }
-          edges.push({ data: _data });
+          importGroups[foundFilePath].push(importedProperty);
         }
+      }
+
+      // Create consolidated edges for each source file
+      for (const [sourceFilePath, importedProperties] of Object.entries(importGroups)) {
+        const edgeId = `${filePath}-imports-${sourceFilePath}`;
+        
+        // Create aggregated label: first property + count of remaining
+        let edgeLabel = '';
+        let importedProperty = '';
+        
+        if (importedProperties.length === 1) {
+          edgeLabel = importedProperties[0];
+          importedProperty = importedProperties[0];
+        } else {
+          const firstProperty = importedProperties[0];
+          const remainingCount = importedProperties.length - 1;
+          edgeLabel = `${firstProperty} and ${remainingCount} others`;
+          importedProperty = importedProperties.join(', ');
+        }
+
+        const _data = {
+          id: edgeId,
+          label: edgeLabel,
+          source: filePath,
+          target: sourceFilePath,
+          type: 'imports',
+          importedProperty: importedProperty,
+          importCount: importedProperties.length,
+          allImports: importedProperties
+        }
+        edges.push({ data: _data });
       }
     }
 
