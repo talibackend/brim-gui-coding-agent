@@ -1,160 +1,159 @@
 import { createTool } from '@mastra/core/tools';
-import { z } from 'zod';
+import { file, z } from 'zod';
 
 // Define the input schema as an object with a single property containing the discovery data
 const generateMapInputSchema = z.object({
-  discoveryData: z.record(
-    z.string(),
-    z.object({
-      exports: z.array(z.string()),
-      imports: z.array(z.string()),
-      content: z.string(),
-      description: z.string()
-    })
-  ).describe('Discovery workflow output data')
+  discoveryData: z.array(z.object({
+    filePath: z.string().describe('File path'),
+    exports: z.array(z.string()).describe('Array of exported symbols from the file'),
+    imports: z.array(z.string()).describe('Array of import statements in the file'),
+    content: z.string().describe('Full content of the file'),
+    description: z.string().describe('Description of the file\'s purpose and functionality')
+  })).describe('Array of file analysis results from discovery workflow')
 });
 
 // Define Cytoscape element schemas
 const cytoscapeNodeSchema = z.object({
   data: z.object({
-    id: z.string(),
-    label: z.string(),
-    type: z.enum(['file', 'export', 'import']).optional(),
-    description: z.string().optional(),
-    filePath: z.string().optional(),
-    exports: z.array(z.string()).optional(),
-    imports: z.array(z.string()).optional(),
-    size: z.number().optional()
+    id: z.string().describe('Unique identifier for the node'),
+    label: z.string().describe('Display label for the node'),
+    description: z.string().optional().describe('Description of the node\'s purpose'),
+    filePath: z.string().optional().describe('Full file path for file nodes'),
+    exports: z.array(z.string()).optional().describe('Array of exported symbols for file nodes'),
+    imports: z.array(z.string()).optional().describe('Array of import statements for file nodes'),
+    size: z.number().optional().describe('Visual size of the node in the graph visualization')
   })
 });
 
 const cytoscapeEdgeSchema = z.object({
   data: z.object({
-    id: z.string(),
-    source: z.string(),
-    target: z.string(),
-    type: z.enum(['imports', 'exports', 'contains']).optional(),
-    label: z.string().optional(),
-    importedProperty: z.string().optional().nullable()
+    id: z.string().describe('Unique identifier for the edge'),
+    source: z.string().describe('ID of the source node'),
+    target: z.string().describe('ID of the target node'),
+    type: z.enum(['imports', 'exports', 'contains']).optional().describe('Type of relationship between nodes'),
+    label: z.string().optional().describe('Display label for the edge'),
+    importedProperty: z.string().optional().nullable().describe('Specific property being imported (if applicable)')
   })
 });
 
 const cytoscapeGraphSchema = z.object({
   elements: z.object({
-    nodes: z.array(cytoscapeNodeSchema),
-    edges: z.array(cytoscapeEdgeSchema)
-  })
+    nodes: z.array(cytoscapeNodeSchema).describe('Array of nodes in the graph'),
+    edges: z.array(cytoscapeEdgeSchema).describe('Array of edges connecting nodes in the graph')
+  }).describe('Graph elements including nodes and edges')
 });
 
 export const generateMapTool = createTool({
   id: 'generate-map',
   description: 'Transform discovery workflow output into Cytoscape-compatible graph data',
   inputSchema: generateMapInputSchema,
-  outputSchema: cytoscapeGraphSchema,
+  outputSchema: cytoscapeGraphSchema.describe('Cytoscape-compatible graph data structure'),
   execute: async (inputData) => {
+
+    const checkIfFileExists = (filePaths : Array<string>, filePath : string) : string =>{
+        for(let i = 0; i < filePaths.length; i++){
+            if(filePaths[i].startsWith(filePath)){
+                return filePaths[i];
+            }
+        }
+
+        return '';
+    }
+
+    // Helper function to calculate file depth
+    const calculateFileDepth = (filePath: string): number => {
+      // Count the number of path separators (both / and \)
+      const separators = filePath.split(/[\/\\]/).filter(part => part.trim() !== '');
+      return separators.length;
+    }
+
+    // Helper function to get just the filename from path
+    const getFileName = (filePath: string): string => {
+      const parts = filePath.split(/[\/\\]/);
+      return parts[parts.length - 1] || filePath;
+    }
+
+    // Helper function to calculate node size based on depth
+    const calculateNodeSize = (depth: number, maxDepth: number): number => {
+      // Base size for root files (depth = 1)
+      const baseSize = 300;
+      // Minimum size (for deepest files)
+      const minSize = 100;
+      
+      if (maxDepth <= 1) return baseSize;
+      
+      // Calculate size reduction per depth level
+      const sizeReductionPerLevel = (baseSize - minSize) / (maxDepth - 1);
+      
+      // Size decreases as depth increases
+      const size = Math.max(minSize, baseSize - (sizeReductionPerLevel * (depth - 1)));
+      
+      return Math.round(size);
+    }
+    
     const nodes: Array<{ data: any }> = [];
     const edges: Array<{ data: any }> = [];
-    const nodeIds = new Set<string>();
-    const edgeIds = new Set<string>();
 
-    const discoveryData = inputData.discoveryData;
+    const files = inputData.discoveryData;
+    const filePaths = files.map(file => file.filePath);
 
-    // Calculate file depths and find min/max depth
-    const fileDepths = new Map<string, number>();
-    let minDepth = Infinity;
-    let maxDepth = 0;
-
-    Object.keys(discoveryData).forEach((filePath) => {
-      // Count path segments to determine depth
-      const depth = filePath.split('/').length;
-      fileDepths.set(filePath, depth);
-      minDepth = Math.min(minDepth, depth);
-      maxDepth = Math.max(maxDepth, depth);
-    });
-
-    // Function to calculate size based on depth (250 for shallowest, 100 for deepest)
-    const calculateSize = (depth: number): number => {
-      if (maxDepth === minDepth) return 175; // All files at same depth
-      
-      // Linear interpolation: size = 250 - ((depth - minDepth) / (maxDepth - minDepth)) * 150
-      // Minimum size 100, maximum size 250, increment steps of ~20
-      const normalizedDepth = (depth - minDepth) / (maxDepth - minDepth);
-      return Math.round(250 - (normalizedDepth * 150));
-    };
-
-    // First, create nodes for all files
-    Object.entries(discoveryData).forEach(([filePath, fileData]) => {
-      if (!nodeIds.has(filePath)) {
-        const depth = fileDepths.get(filePath) || minDepth;
-        const size = calculateSize(depth);
-        
-        nodes.push({
-          data: {
-            id: filePath,
-            label: filePath.split('/').pop() || filePath,
-            type: 'file',
-            description: fileData.description,
-            filePath: filePath,
-            exports: fileData.exports,
-            imports: fileData.imports,
-            size: size
-          }
-        });
-        nodeIds.add(filePath);
+    // First pass: calculate max depth
+    let maxDepth = 1;
+    for(let i = 0; i < files.length; i++) {
+      const depth = calculateFileDepth(files[i].filePath);
+      if (depth > maxDepth) {
+        maxDepth = depth;
       }
-    });
+    }
 
-    // Create edges based on imports between files
-    Object.entries(discoveryData).forEach(([sourceFilePath, sourceFileData]) => {
-      sourceFileData.imports.forEach((importString: string) => {
-        // Parse import in format "/absolute/path/to/file.importedProperty"
-        const lastDotIndex = importString.lastIndexOf('.');
-        let importedFilePath = importString;
-        let importedProperty = '';
-        
-        if (lastDotIndex !== -1) {
-          importedFilePath = importString.substring(0, lastDotIndex);
-          importedProperty = importString.substring(lastDotIndex + 1);
-        }
-        
-        // Find the target file that matches this absolute path
-        const targetFilePath = Object.keys(discoveryData).find(key => 
-          key === importedFilePath || importedFilePath.includes(key) || key.includes(importedFilePath)
-        );
+    // Second pass: create nodes with size based on depth
+    for(let i = 0; i < files.length; i++) {
+      const currentFile = files[i];
+      const filePath = currentFile.filePath;
+      const depth = calculateFileDepth(filePath);
+      const fileName = getFileName(filePath);
+      
+      const data = {
+        id: filePath,
+        label: fileName, // Just the filename, not full path
+        description: currentFile.description,
+        filePath: filePath,
+        exports: currentFile.exports,
+        imports: currentFile.imports,
+        size: calculateNodeSize(depth, maxDepth),
+      }
 
-        if (targetFilePath && targetFilePath !== sourceFilePath) {
-          // If there's an imported property, check if the target file exports it
-          if (importedProperty) {
-            const targetFileData = discoveryData[targetFilePath];
-            if (!targetFileData.exports.includes(importedProperty)) {
-              return; // Skip if property not exported
-            }
+      nodes.push({ data });
+
+      for(let j = 0; j < currentFile.imports.length; j++) {
+        const importTarget = currentFile.imports[j];
+
+        const importSplitted = importTarget.split('.');
+
+        const edgeLabel = importSplitted[importSplitted.length - 1];
+        importSplitted.pop();
+        const importFilePath = importSplitted.join('.');
+
+        const foundFilePath = checkIfFileExists(filePaths, importFilePath);
+        if(foundFilePath && importFilePath){
+          const _data = {
+            id : `${filePath}-imports-${importFilePath}`,
+            label : edgeLabel,
+            source : filePath,
+            target : foundFilePath,
+            type : 'imports',
+            importedProperty: edgeLabel
           }
-          
-          const edgeId = `${sourceFilePath}_imports_${importString}`;
-          
-          if (!edgeIds.has(edgeId)) {
-            edges.push({
-              data: {
-                id: edgeId,
-                source: sourceFilePath,
-                target: targetFilePath,
-                type: 'imports',
-                label: 'imports',
-                importedProperty: importedProperty || null
-              }
-            });
-            edgeIds.add(edgeId);
-          }
+          edges.push({ data: _data });
         }
-      });
-    });
+      }
+    }
 
     return {
       elements: {
         nodes,
         edges
       }
-    };
+    }
   }
 });

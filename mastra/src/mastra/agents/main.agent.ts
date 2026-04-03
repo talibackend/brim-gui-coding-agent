@@ -1,7 +1,6 @@
 import { Agent } from '@mastra/core/agent';
 import { discoveryWorkflow } from '../workflows/discovery.workflow';
 import { exclusionPatternWorkflow } from '../workflows/exclusionPattern.workflow';
-import { generateMapTool } from '../tools/generateMap.tool';
 import { Memory } from '@mastra/memory';
 import { Store } from '../../config/store.config';
 import { VectorStore } from '../../config/vector.config';
@@ -11,54 +10,60 @@ export const mainAgent = new Agent({
   id: 'main_agent',
   name: 'Codebase Graph Analyzer',
   instructions: `
-    You are a codebase graph analyzer that can generate different types of visualizations and analyses from a codebase.
+    You are a workflow coordinator that orchestrates codebase analysis workflows to generate graph visualizations and summaries.
 
-    Available capabilities:
-    1. Run exclusion pattern workflow to automatically generate intelligent exclusion patterns
-    2. Run discovery workflow to analyze the codebase structure (using generated exclusion patterns)
-    3. Generate Cytoscape-compatible graph data from the analysis
-    4. Provide different graph visualizations based on user requests:
-       - Architectural diagrams: Show high-level structure and component relationships
-       - Execution workflows: Trace execution paths and control flow
-       - Dependency graphs: Display import/export relationships between files
-       - Module relationship maps: Show how modules interact with each other
-       - Circular dependency detection: Identify and highlight circular imports
-       - Code quality analysis: Analyze graph structure for potential issues
+    Your primary duty is to coordinate workflows in the correct sequence to achieve the analysis goal.
 
-    Workflow:
-    1. When given a codebase path and analysis type, first run the exclusion pattern workflow
-    2. Use the generated exclusion patterns to run the discovery workflow
-    3. Process the discovery output with the generateMap tool. CRITICAL: The generateMap tool requires EXACT input format: {discoveryData: discoveryWorkflowOutput}. Pass the discovery workflow output directly as the value of the discoveryData property.
-    4. Analyze the resulting graph based on the requested visualization type
-    5. Return a structured JSON response
+    Available workflows:
+    1. exclusionPatternWorkflow: Generates intelligent exclusion patterns for a codebase
+       Input: { basepath: "/path/to/codebase" }
+       Output: ["node_modules/", "*.log", "dist/", ".git/", "*.tmp", ".*/", "*.md", "*.jpg", ...]
 
-    Response format must be a JSON object with the following structure:
+    2. discoveryWorkflow: Analyzes codebase structure using exclusion patterns and generates graph representation with summary
+       Input: { basepath: "/path/to/codebase", exclude: ["node_modules/", "*.log", ...] }
+       Output: {
+         "graphData": {
+           "elements": {
+             "nodes": [...],
+             "edges": [...]
+           }
+         },
+         "summary": "graph structure summary"
+       }
+
+    Coordination workflow:
+    1. When given a codebase path, first run exclusionPatternWorkflow to generate exclusion patterns
+    2. Use the generated exclusion patterns as input to discoveryWorkflow
+    3. Return the complete result from discoveryWorkflow
+
+    CRITICAL RULES:
+    1. Always run workflows in sequence: exclusionPatternWorkflow → discoveryWorkflow
+    2. Pass outputs directly between workflows without modification
+    3. The discoveryWorkflow now includes graph generation and summary analysis in a single workflow
+    4. Do not transform, wrap, or modify workflow outputs when passing between workflows
+
+    Output format: Return ONLY a JSON object with the following structure:
     {
-      "graphData": {
-        "nodes": [...],
-        "edges": [...]
+      "analysisResult": {
+        "graphData": {
+          "elements": {
+            "nodes": [...],
+            "edges": [...]
+          }
+        },
+        "summary": "graph structure summary from discoveryWorkflow"
       },
-      "summary": "brief explanation of the plotted graph"
+      "workflowSequence": [
+        "exclusionPatternWorkflow",
+        "discoveryWorkflow"
+      ],
+      "status": "completed"
     }
 
-    The summary should be a concise explanation of what the graph represents, including:
-    - What type of codebase was analyzed
-    - Key structural characteristics visible in the graph
-    - Notable patterns or relationships between files
-    - Any interesting observations about the architecture
-    
-    IMPORTANT TOOL USAGE RULES:
-    1. When calling generateMapTool, you MUST pass the discovery workflow output as: {discoveryData: discoveryWorkflowOutput}
-    2. The discoveryData must be the exact output from the discovery workflow, not modified or transformed
-    3. Do not wrap the discoveryData in additional objects or arrays
-    4. The tool expects a single object with a discoveryData property containing the discovery results
-    5. Tool input schema: {discoveryData: {[filePath: string]: {exports: string[], imports: string[], content: string, description: string}}}
-
-    Return ONLY the JSON object with "graphData" and "summary" properties, no other text or explanations.
+    Return ONLY the JSON object, no other text, explanations, or markdown formatting.
   `,
   model: 'openai/gpt-5-mini',
   workflows: { exclusionPatternWorkflow, discoveryWorkflow },
-  tools: { generateMapTool },
 //   memory : new Memory({
 //     storage : Store,
 //     vector : VectorStore,

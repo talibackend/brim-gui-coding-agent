@@ -11,11 +11,20 @@ const exclusionPatternsStep = createStep({
   id: "exclusion_patterns_step",
   description: "Generate exclusion patterns based on file extensions and subdirectories",
   inputSchema: z.object({
-    "file-extensions": z.array(z.string()).describe('Array of file extensions'),
-    "subdirectories": z.array(z.string()).describe('Array of sub directories'),
+    "file-extensions": z.object({
+      extensions: z.array(z.string()).describe('Array of file extensions'),
+      basepath: z.string().describe('Base directory path that was scanned')
+    }),
+    "subdirectories": z.object({
+      subdirectories: z.array(z.string()).describe('Array of sub directories'),
+      basepath: z.string().describe('Base directory path that was scanned')
+    })
   }),
-  outputSchema: z.array(z.string()).describe('Array of exclusion patterns'),
-  execute: async ({ inputData }) => {
+  outputSchema: z.object({
+    basepath: z.string().describe('Base directory path to scan'),
+    exclude: z.array(z.string()).optional().default([]).describe('Array of patterns to exclude (supports wildcards *)'),
+  }),
+  execute: async ({ inputData, requestContext }) => {
     // Transform input to match agent's expected format
     const agentInput = {
       extensions: inputData["file-extensions"],
@@ -34,10 +43,10 @@ const exclusionPatternsStep = createStep({
             pattern.replace(/\\\\/g, '\\\\\\\\').replace(/\\-(?![bfnrtu0-9])/g, '\\\\-')
           )
         : [];
-      return sanitizedPatterns;
+      return { basepath: agentInput.extensions.basepath, exclude: sanitizedPatterns };
     } catch (error) {
       console.error('Failed to parse exclusion patterns:', error);
-      return [];
+      return { basepath: agentInput.extensions.basepath, exclude: [] };
     }
   }
 });
@@ -47,7 +56,10 @@ export const exclusionPatternWorkflow = createWorkflow({
   inputSchema: z.object({
     basepath: z.string().describe('Base directory path to scan')
   }),
-  outputSchema: z.array(z.string()).describe('Array of exclusion patterns for the project')
+  outputSchema: z.object({
+    basepath: z.string().describe('Base directory path to scan'),
+    exclude: z.array(z.string()).optional().default([]).describe('Array of patterns to exclude (supports wildcards *)'),
+  }),
 })
 .then(listFilesStep)
 .parallel([fileExtensionsStep, subDirectoriesStep])

@@ -13,7 +13,10 @@ export const listFiles = createTool({
     basepath: z.string().describe('Base directory path to scan'),
     exclude: z.array(z.string()).optional().default([]).describe('Array of patterns to exclude (supports wildcards *)'),
   }),
-  outputSchema: z.array(z.string()).describe('Array of relative file paths'),
+  outputSchema: z.object({
+    files: z.array(z.string()).describe('Array of relative file paths'),
+    basepath : z.string().describe('Base directory path that was scanned')
+  }),
   execute: async (inputData) => {
     const { basepath, exclude = [] } = inputData;
     
@@ -64,46 +67,53 @@ export const listFiles = createTool({
     }
     
     readDirRecursive(basepath);
-    return result;
+    return { files: result, basepath };
   },
 });
 
 export const readFiles = createTool({
   id: 'read-files',
   description: 'Read multiple files concurrently and return their contents',
-  inputSchema: z.array(z.string()).describe('Array of file paths to read'),
-  outputSchema: z.record(z.string(), z.string()).describe('Object mapping file paths to their contents'),
+  inputSchema: z.object({
+    files: z.array(z.string()).describe('Array of relative file paths'),
+    basepath : z.string().describe('Base directory path that was scanned')
+  }),
+  outputSchema: z.array(z.object({
+    filePath: z.string().describe('File path'),
+    content: z.string().describe('File content')
+  })).describe('Array of file objects with path and content'),
   execute: async (inputData) => {
-    const readPromises = inputData.map(async (filepath) => {
+    const readPromises = inputData.files.map(async (filepath) => {
       const fullPath = filepath;
       try {
         const content = await readFileAsync(fullPath, 'utf-8');
-        return { filepath, content };
+        return { filePath: filepath, content };
       } catch (error) {
-        return { filepath, content: `Error reading file: ${error}` };
+        return { filePath: filepath, content: `Error reading file: ${error}` };
       }
     });
     
     const results = await Promise.all(readPromises);
     
-    const contents: Record<string, string> = {};
-    results.forEach(({ filepath, content }) => {
-      contents[filepath] = content;
-    });
-    
-    return contents;
+    return results;
   },
 });
 
 export const fileExtensions = createTool({
   id: 'file-extensions',
   description: 'Extract unique file extensions from an array of file paths',
-  inputSchema: z.array(z.string()).describe('Array of file paths to analyze'),
-  outputSchema: z.array(z.string()).describe('Unique collection of file extensions'),
+  inputSchema: z.object({
+    files: z.array(z.string()).describe('Array of relative file paths'),
+    basepath : z.string().describe('Base directory path that was scanned')
+  }),
+  outputSchema: z.object({
+    extensions: z.array(z.string()).describe('Unique collection of file extensions'),
+    basepath : z.string().describe('Base directory path that was scanned')
+  }),
   execute: async (inputData) => {
     const extensions = new Set<string>();
     
-    inputData.forEach((path) => {
+    inputData.files.forEach((path) => {
       // Extract extension from file path
       const lastDotIndex = path.lastIndexOf('.');
       if (lastDotIndex !== -1 && lastDotIndex < path.length - 1) {
@@ -112,19 +122,25 @@ export const fileExtensions = createTool({
       }
     });
     
-    return Array.from(extensions).sort();
+    return { extensions: Array.from(extensions).sort(), basepath: inputData.basepath };
   },
 });
 
 export const subdirectories = createTool({
   id: 'subdirectories',
   description: 'Extract unique subdirectory names from an array of file paths',
-  inputSchema: z.array(z.string()).describe('Array of file paths to analyze'),
-  outputSchema: z.array(z.string()).describe('Unique collection of subdirectory names'),
+  inputSchema: z.object({
+    files: z.array(z.string()).describe('Array of relative file paths'),
+    basepath : z.string().describe('Base directory path that was scanned')
+  }),
+  outputSchema: z.object({
+    subdirectories: z.array(z.string()).describe('Unique collection of subdirectory names'),
+    basepath : z.string().describe('Base directory path that was scanned')
+  }),
   execute: async (inputData) => {
     const dirNames = new Set<string>();
     
-    inputData.forEach((path) => {
+    inputData.files.forEach((path) => {
       // Extract directory path from file path
       const dirPath = path.substring(0, path.lastIndexOf('/'));
       
@@ -138,6 +154,6 @@ export const subdirectories = createTool({
       }
     });
     
-    return Array.from(dirNames).sort();
+    return { subdirectories: Array.from(dirNames).sort(), basepath: inputData.basepath };
   },
 });
