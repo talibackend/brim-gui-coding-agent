@@ -12,7 +12,8 @@ import { exclusionPatternsAgent } from './agents/exclusionPatterns.agent';
 
 export const mastra = new Mastra({
   agents: { fileContentAgent, mainAgent, exclusionPatternsAgent, hierarchicalGraphAgent },
-  workflows: { codebaseGraphGeneratorWorkflow },
+  // workflows: { codebaseGraphGeneratorWorkflow },
+  workflows: { discoveryWorkflow },
   storage : Store,
   vectors: {VectorStore},
   logger: new PinoLogger({
