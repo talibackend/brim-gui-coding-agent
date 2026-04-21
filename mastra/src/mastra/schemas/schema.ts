@@ -52,7 +52,7 @@ export const compressEdgesOutputSchema = z.object({
 })
 
 export const generateGraphOutputSchema = z.object({
-    elements: {
+    elements: z.object({
         nodes: z.array(z.object({
             data: z.object({
                 id: z.string().describe('Unique identifier for the node'),
@@ -76,8 +76,8 @@ export const generateGraphOutputSchema = z.object({
                 importedProperties: z.array(z.string()).describe('Array of imported properties for this edge')
             })
         })).describe('Array of edges connecting nodes in the graph')
-    }      
-}).describe('Graph data structure compatible with Cytoscape visualization library');
+    }).describe('Graph data structure compatible with Cytoscape visualization library')
+});
 
 export const discoveryWorkflowOutputSchema = z.object({
     ...generateGraphOutputSchema.shape,

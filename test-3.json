@@ -1,0 +1,457 @@
+{
+  "elements": {
+    "nodes": [
+      {
+        "data": {
+          "id": "group_services",
+          "label": "Services",
+          "description": "Business logic, external integrations and application services",
+          "type": "group",
+          "memberCount": 11,
+          "members": [
+            "src/services/openai.service.ts",
+            "src/services/system.service.ts",
+            "src/services/activity.service.ts",
+            "src/services/auth.service.ts",
+            "src/services/folder.service.ts",
+            "src/services/otp.service.ts",
+            "src/services/polar.service.ts",
+            "src/services/prompt.service.ts",
+            "src/services/stripe.service.ts",
+            "src/services/subscription.service.ts",
+            "src/services/transaction.service.ts"
+          ],
+          "size": 200,
+          "color": "darkorange"
+        }
+      },
+      {
+        "data": {
+          "id": "group_models",
+          "label": "Models / Data",
+          "description": "Database models and data definitions",
+          "type": "group",
+          "memberCount": 9,
+          "members": [
+            "src/models/Prompt.ts",
+            "src/models/User.ts",
+            "src/models/Activity.ts",
+            "src/models/ApiKey.ts",
+            "src/models/Otp.ts",
+            "src/models/Subscription.ts",
+            "src/models/SystemSetting.ts",
+            "src/models/Transaction.ts",
+            "src/models/Folder.ts"
+          ],
+          "size": 200,
+          "color": "mediumpurple"
+        }
+      },
+      {
+        "data": {
+          "id": "group_utils",
+          "label": "Utilities & Validation",
+          "description": "Shared helpers, logging, constants, templates and validations",
+          "type": "group",
+          "memberCount": 13,
+          "members": [
+            "src/utils/logger.ts",
+            "src/utils/consts.ts",
+            "src/utils/auth.ts",
+            "src/utils/network.ts",
+            "src/utils/mail.ts",
+            "src/utils/templates/sub-successful.ts",
+            "src/utils/templates/sub-reminder.ts",
+            "src/utils/validations/prompt.validation.ts",
+            "src/utils/validations/auth.validation.ts",
+            "src/utils/validations/folder.validation.ts",
+            "src/utils/validations/subscription.validation.ts",
+            "src/utils/validations/setting.validation.ts",
+            "src/utils/validations/transaction.validation.ts"
+          ],
+          "size": 200,
+          "color": "slategray"
+        }
+      },
+      {
+        "data": {
+          "id": "group_controllers",
+          "label": "Controllers",
+          "description": "Request handling and orchestration (controllers)",
+          "type": "group",
+          "memberCount": 7,
+          "members": [
+            "src/controllers/activity.controller.ts",
+            "src/controllers/auth.controller.ts",
+            "src/controllers/folder.controller.ts",
+            "src/controllers/prompt.controller.ts",
+            "src/controllers/subscription.controller.ts",
+            "src/controllers/system.controller.ts",
+            "src/controllers/transaction.controller.ts"
+          ],
+          "size": 190,
+          "color": "coral"
+        }
+      },
+      {
+        "data": {
+          "id": "group_routes",
+          "label": "API Routes",
+          "description": "Express / routing layer (HTTP endpoints)",
+          "type": "group",
+          "memberCount": 7,
+          "members": [
+            "src/routes/activity.routes.ts",
+            "src/routes/auth.routes.ts",
+            "src/routes/folder.routes.ts",
+            "src/routes/prompt.routes.ts",
+            "src/routes/subscription.routes.ts",
+            "src/routes/system.routes.ts",
+            "src/routes/transaction.routes.ts"
+          ],
+          "size": 190,
+          "color": "rebeccapurple"
+        }
+      },
+      {
+        "data": {
+          "id": "group_types",
+          "label": "Types / DTOs",
+          "description": "Type definitions and API types (TypeScript)",
+          "type": "group",
+          "memberCount": 6,
+          "members": [
+            "src/types/api.types.ts",
+            "src/types/user.types.ts",
+            "src/types/prompt.types.ts",
+            "src/types/stripe.types.ts",
+            "src/types/subscription.types.ts",
+            "src/types/transaction.types.ts"
+          ],
+          "size": 160,
+          "color": "darkgray"
+        }
+      },
+      {
+        "data": {
+          "id": "group_config",
+          "label": "Configuration & App",
+          "description": "App bootstrap, config and logger settings",
+          "type": "group",
+          "memberCount": 5,
+          "members": [
+            "src/app.ts",
+            "src/config/database.ts",
+            "src/config/config.ts",
+            "src/config/logger.ts",
+            "jest.config.js"
+          ],
+          "size": 180,
+          "color": "steelblue"
+        }
+      },
+      {
+        "data": {
+          "id": "group_middlewares",
+          "label": "Middlewares",
+          "description": "Request middlewares (auth, google callbacks)",
+          "type": "group",
+          "memberCount": 2,
+          "members": [
+            "src/middlewares/auth.ts",
+            "src/middlewares/google.ts"
+          ],
+          "size": 140,
+          "color": "dodgerblue"
+        }
+      },
+      {
+        "data": {
+          "id": "group_tests",
+          "label": "Tests",
+          "description": "Unit / integration tests",
+          "type": "group",
+          "memberCount": 1,
+          "members": [
+            "/Users/talibackend/Desktop/Projects/prompt-generator/__tests__/prompt.test.ts"
+          ],
+          "size": 110,
+          "color": "dimgray"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "data": {
+          "id": "edge_1",
+          "source": "group_services",
+          "target": "group_models",
+          "type": "imports",
+          "label": "12 imports",
+          "importCount": 12,
+          "importedProperties": [
+            "User",
+            "Subscription",
+            "Transaction",
+            "Folder",
+            "Otp",
+            "Activity",
+            "ApiKey",
+            "Prompt",
+            "SystemSetting"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_2",
+          "source": "group_controllers",
+          "target": "group_services",
+          "type": "imports",
+          "label": "9 imports",
+          "importCount": 9,
+          "importedProperties": [
+            "service",
+            "signupService",
+            "promptService",
+            "listPromptsService",
+            "generatePaymentLinkStripe",
+            "createOrLoginUserFromGoogleService",
+            "getSettingService"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_3",
+          "source": "group_routes",
+          "target": "group_controllers",
+          "type": "imports",
+          "label": "7 imports",
+          "importCount": 7,
+          "importedProperties": [
+            "controller"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_4",
+          "source": "group_routes",
+          "target": "group_middlewares",
+          "type": "imports",
+          "label": "2 imports",
+          "importCount": 2,
+          "importedProperties": [
+            "verifyUser"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_5",
+          "source": "group_controllers",
+          "target": "group_utils",
+          "type": "imports",
+          "label": "11 imports",
+          "importCount": 11,
+          "importedProperties": [
+            "validation",
+            "log",
+            "signupValidation",
+            "promptValidation",
+            "listWithPaginationValidation"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_6",
+          "source": "group_controllers",
+          "target": "group_models",
+          "type": "imports",
+          "label": "4 imports",
+          "importCount": 4,
+          "importedProperties": [
+            "User"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_7",
+          "source": "group_services",
+          "target": "group_utils",
+          "type": "imports",
+          "label": "15 imports",
+          "importCount": 15,
+          "importedProperties": [
+            "messages",
+            "log",
+            "sendMail",
+            "templates",
+            "acceptable_currencies",
+            "plans"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_8",
+          "source": "group_services",
+          "target": "group_config",
+          "type": "imports",
+          "label": "3 imports",
+          "importCount": 3,
+          "importedProperties": [
+            "sequelize"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_9",
+          "source": "group_services",
+          "target": "group_services",
+          "type": "imports",
+          "label": "4 imports",
+          "importCount": 4,
+          "importedProperties": [
+            "service",
+            "generatePaymentLink",
+            "generatePaymentLinkStripe"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_10",
+          "source": "group_types",
+          "target": "group_utils",
+          "type": "imports",
+          "label": "6 imports",
+          "importCount": 6,
+          "importedProperties": [
+            "ordering_types",
+            "lengths",
+            "acceptable_currencies"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_11",
+          "source": "group_models",
+          "target": "group_utils",
+          "type": "imports",
+          "label": "7 imports",
+          "importCount": 7,
+          "importedProperties": [
+            "activity_types",
+            "api_key_types",
+            "otp_types",
+            "system_setting_types",
+            "transaction_statuses"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_12",
+          "source": "group_config",
+          "target": "group_routes",
+          "type": "imports",
+          "label": "7 imports",
+          "importCount": 7,
+          "importedProperties": [
+            "routes"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_13",
+          "source": "group_config",
+          "target": "group_services",
+          "type": "imports",
+          "label": "2 imports",
+          "importCount": 2,
+          "importedProperties": [
+            "service",
+            "app"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_14",
+          "source": "group_tests",
+          "target": "group_config",
+          "type": "imports",
+          "label": "2 imports",
+          "importCount": 2,
+          "importedProperties": [
+            "app",
+            "sequelize"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_15",
+          "source": "group_tests",
+          "target": "group_models",
+          "type": "imports",
+          "label": "1 import",
+          "importCount": 1,
+          "importedProperties": [
+            "Prompt"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_16",
+          "source": "group_middlewares",
+          "target": "group_models",
+          "type": "imports",
+          "label": "2 imports",
+          "importCount": 2,
+          "importedProperties": [
+            "User",
+            "ApiKey"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_17",
+          "source": "group_utils",
+          "target": "group_config",
+          "type": "imports",
+          "label": "1 import",
+          "importCount": 1,
+          "importedProperties": [
+            "env"
+          ]
+        }
+      },
+      {
+        "data": {
+          "id": "edge_18",
+          "source": "group_utils",
+          "target": "group_utils",
+          "type": "imports",
+          "label": "3 imports",
+          "importCount": 3,
+          "importedProperties": [
+            "log",
+            "plans",
+            "ordering_types"
+          ]
+        }
+      }
+    ]
+  },
+  "summary": "The graph contains 9 group nodes and 18 directed edges with relatively high density (~0.25) and forms a single connected component (no isolated groups). Nodes represent layered modules (Routes, Controllers, Services, Models, Utils, Config, Types, Middlewares, Tests) with Services and Utils acting as primary hubs (highest in/out degree). All edges are import relationships (directed), showing a clear layered chain routes→controllers→services→models and many cross-cutting imports into utils and config; tests and middlewares also import config/models. Notable patterns include self-imports in Services and Utils and circular coupling (Services↔Config and a larger cycle Services→Utils→Config→Routes→Controllers→Services), indicating potential tight coupling despite an otherwise layered API surface."
+}
