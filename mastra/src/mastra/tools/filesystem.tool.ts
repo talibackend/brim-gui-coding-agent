@@ -19,7 +19,7 @@ export const listFiles = createTool({
   }),
   execute: async (inputData) => {
     const { basepath, exclude = [] } = inputData;
-    
+
     function shouldExclude(itemPath: string): boolean {
       return exclude.some(pattern => {
         // Convert glob pattern to regex
