@@ -83,3 +83,16 @@ export const discoveryWorkflowOutputSchema = z.object({
     ...generateGraphOutputSchema.shape,
     summary: z.string().describe('Summary analysis of the graph structure')
 })
+
+export const fileReconInputSchema = z.array(z.object({
+    filePath : z.string().describe('File path'),
+    content : z.string().describe('File content')
+}))
+
+export const fileReconOutputSchema = z.object({
+    discoveryData: z.array(z.object({
+        filePath: z.string().describe('File path'),
+        exports: z.array(z.string()).describe('Array of exported symbols from the file'),
+        imports: z.array(z.string()).describe('Array of import statements in the file')
+    }))
+})
