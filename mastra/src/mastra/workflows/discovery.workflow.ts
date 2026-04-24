@@ -3,7 +3,7 @@ import { z } from "zod";
 import { listFiles, readFiles } from "../tools/filesystem.tool";
 import { generateEdgesTool } from "../tools/generateEdges.tool";
 import { compressEdgesTool } from "../tools/compressEdges.tool";
-import { discoveryWorkflowOutputSchema } from "../schemas/schema";
+import { discoveryWorkflowInputSchema, discoveryWorkflowOutputSchema } from "../schemas/schema";
 import { generateHighLevelGraphTool } from "../tools/generateHighLevelGraph.tool";
 import { generateCodebaseSummaryTool } from "../tools/generateCodebaseSummary.tool";
 import { fileReconTool } from "../tools/fileRecon.tool";
@@ -18,10 +18,7 @@ const fileContentReconStep = createStep(fileReconTool)
 
 export const discoveryWorkflow = createWorkflow({
     id: "project_discovery_workflow",
-    inputSchema: z.object({
-        basepath: z.string().describe('Base directory path to scan'),
-        exclude: z.array(z.string()).optional().default([]).describe('Array of patterns to exclude (supports wildcards *)'),
-    }),
+    inputSchema: discoveryWorkflowInputSchema,
     outputSchema: discoveryWorkflowOutputSchema
 })
 .then(listFilesStep)

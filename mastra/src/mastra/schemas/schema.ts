@@ -96,3 +96,53 @@ export const fileReconOutputSchema = z.object({
         imports: z.array(z.string()).describe('Array of import statements in the file')
     }))
 })
+
+export const discoveryWorkflowInputSchema = z.object({
+    basepath: z.string().describe('Base directory path to scan'),
+    exclude: z.array(z.string()).optional().default([]).describe('Array of patterns to exclude (supports wildcards *)'),
+});
+
+export const codebaseGraphGeneratorWorkflowOutputSchema = z.object({
+    graphData: z.object({
+        elements: z.object({
+            nodes: z.array(z.object({
+                data: z.object({
+                    id: z.string(),
+                    label: z.string(),
+                    type: z.enum(['file', 'export', 'import']).optional(),
+                    description: z.string().optional(),
+                    filePath: z.string().optional(),
+                    exports: z.array(z.string()).optional(),
+                    imports: z.array(z.string()).optional(),
+                    size: z.number().optional()
+                })
+            })),
+            edges: z.array(z.object({
+                data: z.object({
+                    id: z.string(),
+                    source: z.string(),
+                    target: z.string(),
+                    type: z.enum(['imports', 'exports', 'contains']).optional(),
+                    label: z.string().optional(),
+                    importedProperty: z.string().optional().nullable()
+                })
+            }))
+        })
+    }),
+    summary: z.string().describe('Summary analysis of the graph structure')
+})
+
+export const exclusionPatternInputSchema = z.object({
+    "file-extensions": z.object({
+        extensions: z.array(z.string()).describe('Array of file extensions'),
+        basepath: z.string().describe('Base directory path that was scanned')
+    }),
+    "subdirectories": z.object({
+        subdirectories: z.array(z.string()).describe('Array of sub directories'),
+        basepath: z.string().describe('Base directory path that was scanned')
+    })
+})
+
+export const exclusionPatternWorkflowInputSchema = z.object({
+    basepath: z.string().describe('Base directory path to scan'),
+})
