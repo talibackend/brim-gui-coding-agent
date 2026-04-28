@@ -1,6 +1,8 @@
 import { createTool } from "@mastra/core/tools";
 import { fileReconInputSchema, fileReconOutputSchema } from "../schemas/schema";
 import { fileContentAgent } from "../agents/filecontent.agent";
+import { getRedisClient } from "../../config/redis.config";
+import { getSha512OfFile } from "../../utils/hash";
 
 export const fileReconTool = createTool({
     id: "file_recon_tool",
@@ -13,9 +15,20 @@ export const fileReconTool = createTool({
         // Process all files concurrently using Promise.all
         const processingPromises = inputData.map(async (file) => {
             const { filePath, content } = file;
+
+            const cacheKey = `fileRecon:${await getSha512OfFile(filePath)}`;
+            const redisClient = await getRedisClient();
+            const cachedResult = await redisClient.get(cacheKey);
+            
+            if(cachedResult){
+                console.log(`Cache hit for file: ${filePath}`);
+                return { filePath, analysis: JSON.parse(cachedResult), success: true };
+            }
+
             let analysis: any;
 
             try {
+                console.log(`Cache miss for file: ${filePath}. Invoking agent...`);
                 const response = await fileContentAgent.generate(`Extract the necessary information from this file located at: ${filePath}\n\nFile content:\n\n${content}`);
                 analysis = JSON.parse(response.text);
 
@@ -31,6 +44,8 @@ export const fileReconTool = createTool({
                     );
                 }
 
+                console.log(`Storing analysis in cache for file: ${filePath}`);
+                await redisClient.set(cacheKey, JSON.stringify(analysis));
                 return { filePath, analysis, success: true };
             } catch (error: any) {
                 console.log(`Error processing file ${filePath}:`, error);
