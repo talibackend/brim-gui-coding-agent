@@ -13,7 +13,7 @@ export const fileReconTool = createTool({
         const completedFiles: any[] = [];
 
         // Process all files concurrently using Promise.all
-        const processingPromises = inputData.map(async (file) => {
+        const processingPromises = inputData.files.map(async (file) => {
             const { filePath, content } = file;
 
             const cacheKey = `fileRecon:${await getSha512OfFile(filePath)}`;

@@ -84,10 +84,17 @@ export const discoveryWorkflowOutputSchema = z.object({
     summary: z.string().describe('Summary analysis of the graph structure')
 })
 
-export const fileReconInputSchema = z.array(z.object({
-    filePath : z.string().describe('File path'),
-    content : z.string().describe('File content')
-}))
+export const graphProjectionOutputSchema = z.union([
+    discoveryWorkflowOutputSchema,
+    z.array(discoveryWorkflowOutputSchema)
+]).describe('Single graph projection or array of multiple graph projections')
+
+export const fileReconInputSchema = z.object({
+    files: z.array(z.object({
+        filePath: z.string().describe('File path'),
+        content: z.string().describe('File content')
+    }))
+})
 
 export const fileReconOutputSchema = z.object({
     discoveryData: z.array(z.object({
@@ -103,31 +110,29 @@ export const discoveryWorkflowInputSchema = z.object({
 });
 
 export const codebaseGraphGeneratorWorkflowOutputSchema = z.object({
-    graphData: z.object({
-        elements: z.object({
-            nodes: z.array(z.object({
-                data: z.object({
-                    id: z.string(),
-                    label: z.string(),
-                    type: z.enum(['file', 'export', 'import']).optional(),
-                    description: z.string().optional(),
-                    filePath: z.string().optional(),
-                    exports: z.array(z.string()).optional(),
-                    imports: z.array(z.string()).optional(),
-                    size: z.number().optional()
-                })
-            })),
-            edges: z.array(z.object({
-                data: z.object({
-                    id: z.string(),
-                    source: z.string(),
-                    target: z.string(),
-                    type: z.enum(['imports', 'exports', 'contains']).optional(),
-                    label: z.string().optional(),
-                    importedProperty: z.string().optional().nullable()
-                })
-            }))
-        })
+    elements: z.object({
+        nodes: z.array(z.object({
+            data: z.object({
+                id: z.string(),
+                label: z.string(),
+                type: z.enum(['file', 'export', 'import']).optional(),
+                description: z.string().optional(),
+                filePath: z.string().optional(),
+                exports: z.array(z.string()).optional(),
+                imports: z.array(z.string()).optional(),
+                size: z.number().optional()
+            })
+        })),
+        edges: z.array(z.object({
+            data: z.object({
+                id: z.string(),
+                source: z.string(),
+                target: z.string(),
+                type: z.enum(['imports', 'exports', 'contains']).optional(),
+                label: z.string().optional(),
+                importedProperty: z.string().optional().nullable()
+            })
+        }))
     }),
     summary: z.string().describe('Summary analysis of the graph structure')
 })

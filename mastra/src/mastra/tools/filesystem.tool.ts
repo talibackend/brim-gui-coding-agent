@@ -3,6 +3,7 @@ import { z } from 'zod';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
+import { fileReconInputSchema } from '../schemas/schema';
 
 const readFileAsync = promisify(fs.readFile);
 
@@ -78,10 +79,7 @@ export const readFiles = createTool({
     files: z.array(z.string()).describe('Array of relative file paths'),
     basepath : z.string().describe('Base directory path that was scanned')
   }),
-  outputSchema: z.array(z.object({
-    filePath: z.string().describe('File path'),
-    content: z.string().describe('File content')
-  })).describe('Array of file objects with path and content'),
+  outputSchema: fileReconInputSchema,
   execute: async (inputData) => {
     const readPromises = inputData.files.map(async (filepath) => {
       const fullPath = filepath;
@@ -95,7 +93,7 @@ export const readFiles = createTool({
     
     const results = await Promise.all(readPromises);
     
-    return results;
+    return { files: results, basepath: inputData.basepath };
   },
 });
 
