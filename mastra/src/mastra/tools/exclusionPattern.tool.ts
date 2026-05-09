@@ -1,7 +1,7 @@
 import { createTool } from "@mastra/core/tools";
 import { discoveryWorkflowInputSchema, exclusionPatternInputSchema } from "../schemas/schema";
 import { exclusionPatternsAgent } from "../agents/exclusionPatterns.agent";
-import { getRedisClient } from "../../config/redis.config";
+import { getCache } from "../../config/lmdb.config";
 import { getSha512OfString } from "../../utils/hash";
 
 
@@ -18,15 +18,14 @@ export const exclusionPatternTool = createTool({
             subdirectories: inputData["subdirectories"]
         };
 
-        // Perform caching here.
-        const redisClient = await getRedisClient();
+        const cache = getCache();
         const payloadHash = getSha512OfString(JSON.stringify(agentInput));
         const cacheKey = `exclusionPatterns:${payloadHash}`;
-        const search = await redisClient.get(cacheKey);
+        const search = cache.get(cacheKey);
 
         if(search){
             console.log('Cache hit for exclusion patterns');
-            return { basepath : agentInput.extensions.basepath, exclude : JSON.parse(search) };
+            return { basepath : agentInput.extensions.basepath, exclude : search };
         }
 
 
@@ -46,7 +45,7 @@ export const exclusionPatternTool = createTool({
                 : [];
             
             console.log('Storing exclusion patterns in cache');
-            await redisClient.set(cacheKey, JSON.stringify(sanitizedPatterns))
+            await cache.put(cacheKey, sanitizedPatterns)
             return { basepath: agentInput.extensions.basepath, exclude: sanitizedPatterns };
         } catch (error) {
             console.error('Failed to parse exclusion patterns:', error);

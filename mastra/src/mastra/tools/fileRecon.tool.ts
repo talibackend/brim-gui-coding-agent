@@ -1,7 +1,7 @@
 import { createTool } from "@mastra/core/tools";
 import { fileReconInputSchema, fileReconOutputSchema } from "../schemas/schema";
 import { fileContentAgent } from "../agents/filecontent.agent";
-import { getRedisClient } from "../../config/redis.config";
+import { getCache } from "../../config/lmdb.config";
 import { getSha512OfFile } from "../../utils/hash";
 
 export const fileReconTool = createTool({
@@ -17,12 +17,12 @@ export const fileReconTool = createTool({
             const { filePath, content } = file;
 
             const cacheKey = `fileRecon:${await getSha512OfFile(filePath)}`;
-            const redisClient = await getRedisClient();
-            const cachedResult = await redisClient.get(cacheKey);
+            const cache = getCache();
+            const cachedResult = cache.get(cacheKey);
             
             if(cachedResult){
                 console.log(`Cache hit for file: ${filePath}`);
-                return { filePath, analysis: JSON.parse(cachedResult), success: true };
+                return { filePath, analysis: cachedResult, success: true };
             }
 
             let analysis: any;
@@ -45,7 +45,7 @@ export const fileReconTool = createTool({
                 }
 
                 console.log(`Storing analysis in cache for file: ${filePath}`);
-                await redisClient.set(cacheKey, JSON.stringify(analysis));
+                await cache.put(cacheKey, analysis);
                 return { filePath, analysis, success: true };
             } catch (error: any) {
                 console.log(`Error processing file ${filePath}:`, error);
