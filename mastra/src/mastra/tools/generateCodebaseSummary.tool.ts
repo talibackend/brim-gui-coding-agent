@@ -15,6 +15,8 @@ export const generateCodebaseSummaryTool = createTool({
         const cacheKey = `codebaseSummary:${getSha512OfString(graphDescription)}`;
         const cache = getCache();
         const cachedResult = cache.get(cacheKey);
+
+        console.log(cachedResult);
         
         if(cachedResult){
             console.log(`Cache hit for codebase summary generation`);

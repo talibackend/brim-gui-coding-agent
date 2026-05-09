@@ -23,6 +23,8 @@ export const exclusionPatternTool = createTool({
         const cacheKey = `exclusionPatterns:${payloadHash}`;
         const search = cache.get(cacheKey);
 
+        console.log(search);
+
         if(search){
             console.log('Cache hit for exclusion patterns');
             return { basepath : agentInput.extensions.basepath, exclude : search };

@@ -23,16 +23,11 @@ export const listFiles = createTool({
 
     function shouldExclude(itemPath: string): boolean {
       return exclude.some(pattern => {
-        // Convert glob pattern to regex
         let regexPattern = pattern
-          // Escape regex special characters except * and ?
           .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-          // Convert ** to match any characters including /
           .replace(/\*\*/g, '.*')
-          // Convert * to match any characters except /
-          .replace(/\*/g, '[^/]*')
-          // Convert ? to match single character except /
-          .replace(/\?/g, '[^/]');
+          .replace(/\?/g, '[^/]')
+          .replace(/\*/g, '[^/]*');
         
         // Handle directory patterns (ending with /)
         if (pattern.endsWith('/')) {

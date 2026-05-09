@@ -14,7 +14,9 @@ export const generateHighLevelGraphTool = createTool({
         const cacheKey = `highLevelGraph:${getSha512OfString(JSON.stringify(inputData.edges))}`;
         const cache = getCache();
         const cachedResult = cache.get(cacheKey);
-        
+
+        console.log(cachedResult);
+
         if(cachedResult){
             console.log(`Cache hit for high level graph generation`);
             return cachedResult;

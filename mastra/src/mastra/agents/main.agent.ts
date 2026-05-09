@@ -3,11 +3,14 @@ import { codebaseGraphGeneratorWorkflow } from '../workflows/codebaseGraphGenera
 import { graphProjectionOutputSchema } from '../schemas/schema';
 import { readFiles } from '../tools/filesystem.tool';
 import { fileReconTool } from '../tools/fileRecon.tool';
+import { cloneRepositoryTool } from '../tools/cloneRepository.tool';
 
 export const mainAgent = new Agent({
   id: 'main_agent',
   name: 'Codebase Graph Generator',
   instructions: `You generate dynamic visual projections of any codebase.
+
+    Input can be a GitHub URL or a local filesystem path. For GitHub URLs, first use cloneRepository to clone the repo to a temp directory, then use the returned basepath.
 
     Start by running the codebaseGraphGeneratorWorkflow to get base graph data and summary. The workflow handles the full pipeline: listing files, reading contents, extracting imports/exports, generating edges, and producing a high-level graph with summary.
 
@@ -19,5 +22,6 @@ export const mainAgent = new Agent({
   tools: {
     readFiles,
     fileReconTool,
+    cloneRepositoryTool,
   },
 });
